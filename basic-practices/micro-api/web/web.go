@@ -14,7 +14,8 @@ var upGrader = websocket.Upgrader{
 func main() {
 	// New web service
 	service := web.NewService(
-		web.Name("go.micro.web.websocket"),
+		// web.Name("go.micro.web.websocket"),
+		web.Name("go.micro.api.websocket"),
 	)
 
 	if err := service.Init(); err != nil {
@@ -23,6 +24,7 @@ func main() {
 
 	// static files
 	service.Handle("/websocket/", http.StripPrefix("/websocket/", http.FileServer(http.Dir("html"))))
+	// service.Handle("/websocket/", http.StripPrefix("/websocket/", http.FileServer(http.Dir("C:/src/all-in-one/basic-practices/micro-api/web/html"))))
 
 	// websocket interface
 	service.HandleFunc("/websocket/hi", hi)
