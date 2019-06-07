@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	proto2 "github.com/gogo/protobuf/proto"
 	proto "github.com/micro-in-cn/all-in-one/basic-practices/micro-api/api/proto"
 	api "github.com/micro/go-api/proto"
 	"github.com/micro/go-log"
 	"github.com/micro/go-micro"
 	"github.com/micro/go-micro/errors"
+	"github.com/micro/go-micro/server"
 	"strings"
 
 	"context"
@@ -28,11 +30,6 @@ func (e *Example) Call(ctx context.Context, req *api.Request, rsp *api.Response)
 		return errors.BadRequest("go.micro.api.example", "参数不正确")
 	}
 
-	// 打印请求头
-	for k, v := range req.Header {
-		log.Logf("请求头信息，", k, " : ", v)
-	}
-
 	rsp.StatusCode = 200
 
 	b, _ := json.Marshal(map[string]string{
@@ -45,44 +42,34 @@ func (e *Example) Call(ctx context.Context, req *api.Request, rsp *api.Response)
 	return nil
 }
 
-// Bar 方法全称是Foo.Bar，故而它会以/example/foo/bar为路由提供服务
-func (f *Foo) Bar(ctx context.Context, req *api.Request, rsp *api.Response) error {
-	log.Logf("Foo.Bar接口收到请求")
+// logWrapper 包装HandlerFunc类型的接口
+func logWrapper(fn server.HandlerFunc) server.HandlerFunc {
+	return func(ctx context.Context, req server.Request, rsp interface{}) error {
 
-	if req.Method != "POST" {
-		return errors.BadRequest("go.micro.api.example", "require post")
+		log.Logf("[logWrapper] 收到请求，请求接口：%s", req.Endpoint())
+
+		reqStruct := &api.Request{}
+		bytes, _ := req.Read()
+
+		_ = proto2.Unmarshal(bytes, reqStruct)
+
+		log.Logf("[logWrapper] 请求参数名：%s ", reqStruct.Get["name"].Key)
+
+		err := fn(ctx, req, rsp)
+		return err
 	}
-
-	ct, ok := req.Header["Content-Type"]
-	if !ok || len(ct.Values) == 0 {
-		return errors.BadRequest("go.micro.api.example", "need content-type")
-	}
-
-	if ct.Values[0] != "application/json" {
-		return errors.BadRequest("go.micro.api.example", "expect application/json")
-	}
-
-	var body map[string]interface{}
-	json.Unmarshal([]byte(req.Body), &body)
-
-	// 设置返回值
-	rsp.Body = "收到消息：" + string([]byte(req.Body))
-
-	return nil
 }
 
 func main() {
 	service := micro.NewService(
-		micro.Name("go.micro.api.iv"),
+		micro.Name("go.micro.api.example"),
+		micro.WrapHandler(logWrapper),
 	)
 
 	service.Init()
 
 	// 注册 example handler
 	proto.RegisterExampleHandler(service.Server(), new(Example))
-
-	// 注册 foo handler
-	proto.RegisterFooHandler(service.Server(), new(Foo))
 
 	if err := service.Run(); err != nil {
 		log.Fatal(err)

@@ -11,7 +11,7 @@ func main() {
 	// 加载配置文件
 	if err := config.Load(file.NewSource(
 		file.WithPath("./config/config.yml"),
-		file.WithPath("./config/config.json"),
+		// file.WithPath("./config/config.json"),
 	)); err != nil {
 		fmt.Println(err)
 		return

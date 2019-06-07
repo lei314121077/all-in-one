@@ -19,7 +19,7 @@ func main() {
 
 	// 新建broker
 	bk1 := broker.NewBroker(
-		broker.Addrs(fmt.Sprintf("%s:%d", "127.0.0.1", 11089)),
+		broker.Addrs(fmt.Sprintf("%s:%d", "127.0.0.1", 11099)),
 	)
 
 	// 订阅主题1
